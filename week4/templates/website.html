@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Your Machine Learning App</title>
+        <title>Dog or Cat</title>
+        <link rel="stylesheet" type="text/css" href="/static/style.css">
     </head>
     
     <body>
+        <div class="image-container">
+            <img src="/static/images/cat.jpg" alt="Cat Image">
+            <br><br><br>
+            <h1>or</h1>
+            <img src="/static/images/dog.jpg" alt="Dog Image">
+            <h1>?</h1>
+        </div>
         <form name="form", method="POST", style="text-align: center;">
             <br>
-            Height: <input type="number" name="height", placeholder="Enter height in cm" required/>
+            Height: <input type="number" name="height" step="any", placeholder="Enter height in cm" required/>
             <br><br>
-            Weight: <input type="number" name="weight", placeholder="Enter weight in kg" required/>
+            Weight: <input type="number" name="weight" step="any", placeholder="Enter weight in kg" required/>
             <br><br>
-            <button value="Submit">Run</button>
+            <button class="button" value="Submit">Predict</button>
         </form>
         <p style="text-align: center;">{{ output }}</p>
     </body>

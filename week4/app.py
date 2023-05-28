@@ -2,12 +2,7 @@ from flask import Flask, request, render_template
 import pandas as pd
 import joblib
 
-
-# Declare a Flask app
-app = Flask(__name__)
-
-# Main function here
-# ------------------
+app = Flask(__name__, static_url_path='/static')
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -16,7 +11,6 @@ def main():
     # If a form is submitted
     if request.method == "POST":
 
-        # Unpickle classifier
         clf = joblib.load("clf.pkl")
 
         # Get values through input bars
@@ -35,6 +29,5 @@ def main():
     return render_template("website.html", output=prediction)
 
 
-# Running the app
 if __name__ == '__main__':
     app.run(debug=True)

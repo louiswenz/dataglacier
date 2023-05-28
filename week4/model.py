@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 import joblib
 
 df = pd.read_csv("data.csv")
@@ -7,7 +7,8 @@ df = pd.read_csv("data.csv")
 X = df[["Height", "Weight"]]
 y = df["Species"]
 
-clf = GaussianNB()
-clf.fit(X, y)
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(X, y)
+# predictions = knn.predict(X)
 
-joblib.dump(clf, "clf.pkl")
+joblib.dump(knn, "clf.pkl")
