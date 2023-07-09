@@ -4,9 +4,13 @@ import random
 import logging
 from spacy.scorer import Scorer
 from sklearn.metrics import accuracy_score
-from spacy.training.example import Example
 import string
 from pathlib import Path
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_recall_fscore_support
+from spacy.tokens import Doc
+from spacy.training import Example
+import matplotlib.pyplot as plt
 
 output_dir = "/Users/Louis/Desktop/DataGlacier/dataglacier/week7"
 
@@ -29,7 +33,7 @@ def convert_dataturks_to_spacy(dataturks_JSON_FilePath):
 
         for line in lines:
             data = json.loads(line)
-            text = data['content'].replace('-', ' ')
+            text = data['content']
             entities = []
             for annotation in data['annotation']:
                 # only a single point in text annotation.
@@ -59,9 +63,10 @@ def convert_dataturks_to_spacy(dataturks_JSON_FilePath):
 
 
 def train_spacy():
-
+    loss = []
+    score = []
     TRAIN_DATA = convert_dataturks_to_spacy(
-        "traindata.json")
+        "dataset/Resumeold.json")
 
     TRAIN_DATA = clean_entities(TRAIN_DATA)
     nlp = spacy.blank('en')  # create blank Language class
@@ -83,7 +88,7 @@ def train_spacy():
     with nlp.disable_pipes(*other_pipes):  # only train NER
         optimizer = nlp.begin_training()
         for itn in range(10):
-            print("Statring iteration " + str(itn))
+            print("Starting iteration " + str(itn))
             random.shuffle(TRAIN_DATA)
             losses = {}
             for text, annotations in TRAIN_DATA:
@@ -91,13 +96,78 @@ def train_spacy():
                 examples = [Example.from_dict(doc, annotations)]
                 nlp.update(
                     examples,
-                    drop=0.5,
+                    drop=0.2,
                     sgd=optimizer,
                     losses=losses)
+            sc = abs(1-(losses['ner'] / len(TRAIN_DATA)))
             print(losses)
+            print("Score:", sc)
+            loss.append(losses['ner'])
+            score.append(sc)
 
     nlp.to_disk(Path(output_dir))
     print("Saved model to", output_dir)
+
+    evaluate(nlp)
+
+    return loss, score
+
+
+def evaluate(nlp):
+    examples = convert_dataturks_to_spacy("dataset/testdata.json")
+    examples = clean_entities(examples)
+    c = 0
+    for text, annot in examples:
+
+        f = open("resume"+str(c)+".txt", "w")
+        doc_to_test = nlp(text)
+        d = {}
+        for ent in doc_to_test.ents:
+            d[ent.label_] = []
+        for ent in doc_to_test.ents:
+            d[ent.label_].append(ent.text)
+
+        for i in set(d.keys()):
+
+            f.write("\n\n")
+            f.write(i + ":"+"\n")
+            for j in set(d[i]):
+                f.write(j.replace('\n', '')+"\n")
+    print("Files written")
+    # d = {}
+    # for ent in doc_to_test.ents:
+    #     d[ent.label_] = [0, 0, 0, 0, 0, 0]
+    #     for ent in doc_to_test.ents:
+    #         doc_gold_text = Doc(nlp.vocab, words=text.split())
+    #         example = Example.from_dict(doc_gold_text, annot)
+    #         gold = example.get_aligned_ner()
+    #         for i, v in enumerate(gold):
+    #             if v == None:
+    #                 gold[i] = 'O'
+    #         y_true = [ent.label_ if ent.label_ in x else 'Not ' +
+    #                   ent.label_ for x in gold]
+    #         y_pred = [x.ent_type_ if x.ent_type_ ==
+    #                   ent.label_ else 'Not '+ent.label_ for x in doc_to_test]
+    #         if (d[ent.label_][0] == 0) and (len(y_true) == len(y_pred)):
+    #             # f.write("For Entity "+ent.label_+"\n")
+    #             # f.write(classification_report(y_true, y_pred)+"\n")
+    #             (p, r, f, s) = precision_recall_fscore_support(
+    #                 y_true, y_pred, average='weighted')
+    #             a = accuracy_score(y_true, y_pred)
+    #             d[ent.label_][0] = 1
+    #             d[ent.label_][1] += p
+    #             d[ent.label_][2] += r
+    #             d[ent.label_][3] += f
+    #             d[ent.label_][4] += a
+    #             d[ent.label_][5] += 1
+    #     c += 1
+    # for i in d:
+    #     print("\n For Entity "+i+"\n")
+    #     print("Accuracy : "+str((d[i][4]/d[i][5])*100)+"%")
+    #     print("Precision : "+str(d[i][1]/d[i][5]))
+    #     print("Recall : "+str(d[i][2]/d[i][5]))
+    #     print("F-score : "+str(d[i][3]/d[i][5]))
+    return
 
 
 def clean_entities(training_data):
@@ -123,13 +193,20 @@ def clean_entities(training_data):
                         entities.remove(entity)
                 j += 1
             i += 1
+        # text = text.replace('-', ' ')
+        # text = ' '.join(text.split('\n'))
         clean_data.append((text, {'entities': entities}))
 
     return clean_data
 
 
-# train_spacy()
-
+loss, score = train_spacy()
+plt.plot(loss, label='loss')
+plt.legend()
+plt.show()
+plt.plot(score, label='score')
+plt.legend()
+plt.show()
 print("Loading from", output_dir)
 nlp2 = spacy.load(output_dir)
 
@@ -137,3 +214,10 @@ nlp2 = spacy.load(output_dir)
 docx1 = nlp2(u"Govardhana K\nSenior Software Engineer\n\nBengaluru, Karnataka, Karnataka - Email me on Indeed: indeed.com/r/Govardhana-K/\nb2de315d95905b68\n\nTotal IT experience 5 Years 6 Months")
 for token in docx1.ents:
     print(token.text, token.start_char, token.end_char, token.label_)
+
+
+# TRAIN_DATA = convert_dataturks_to_spacy(
+#     "dataset/Resumeold.json")
+
+# TRAIN_DATA = clean_entities(TRAIN_DATA)
+# print(TRAIN_DATA[0])
