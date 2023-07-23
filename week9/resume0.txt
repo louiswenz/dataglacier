@@ -1,13 +1,5 @@
 
 
-College Name:
-Saurashtra University
-
-
-Location:
-Hyderabad
-
-
 Name:
 Dushyant Bhatt
 
@@ -16,18 +8,35 @@ Designation:
 Software Engineer
 
 
-Skills:
-problem solving (Less than 1 year), project lifecycle (Less than 1 year), project manager (Lessthan 1 year), technical assistance. (Less than 1 year
-
-
-Graduation Year:
-2015
-2007
-
-
 Email Address:
 indeed.com/r/Dushyant-Bhatt/140749dace5dc26f
 
 
 Companies worked at:
 Microsoft
+
+
+Skills:
+problem solving (Less than 1 year), project lifecycle (Less than 1 year), project manager (Lessthan 1 year), technical assistance. (Less than 1 year
+
+
+Location:
+Hyderabad
+
+
+College Name:
+Saurashtra University
+BASE (Less than 1 year
+
+
+Location:
+Delhi
+
+
+College Name:
+Punjab Technical University
+Bharati Vidyapeeth University
+
+
+Degree:
+BCA

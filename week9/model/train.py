@@ -2,7 +2,6 @@ import spacy
 import json
 import random
 import logging
-from spacy.scorer import Scorer
 from sklearn.metrics import accuracy_score
 import string
 from pathlib import Path
@@ -11,6 +10,13 @@ from sklearn.metrics import precision_recall_fscore_support
 from spacy.tokens import Doc
 from spacy.training import Example
 import matplotlib.pyplot as plt
+import sys
+import fitz
+from nltk.corpus import stopwords
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk import pos_tag
+import numpy as np
 
 output_dir = "/Users/Louis/Desktop/DataGlacier/dataglacier/week7"
 
@@ -45,10 +51,12 @@ def convert_dataturks_to_spacy(dataturks_JSON_FilePath):
 
                 for label in labels:
                     # dataturks indices are both inclusive [start, end] but spacy is not [start, end)
-                    label = label.replace('-', '_')
+                    # label = label.replace('-', ' ')
                     start, end = remove_whitespace_punctuation(
                         text, point['start'], point['end'] + 1)
                     entities.append((start, end, label))
+
+                    # entities.append((point["start"], point["end"] + 1, label))
 
             training_data.append((text, {"entities": entities}))
 
@@ -66,7 +74,7 @@ def train_spacy():
     loss = []
     score = []
     TRAIN_DATA = convert_dataturks_to_spacy(
-        "dataset/Resumeold.json")
+        "dataset/EResume.json")
 
     TRAIN_DATA = clean_entities(TRAIN_DATA)
     nlp = spacy.blank('en')  # create blank Language class
@@ -87,7 +95,7 @@ def train_spacy():
     other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner']
     with nlp.disable_pipes(*other_pipes):  # only train NER
         optimizer = nlp.begin_training()
-        for itn in range(10):
+        for itn in range(20):
             print("Starting iteration " + str(itn))
             random.shuffle(TRAIN_DATA)
             losses = {}
@@ -200,20 +208,22 @@ def clean_entities(training_data):
     return clean_data
 
 
-loss, score = train_spacy()
-plt.plot(loss, label='loss')
-plt.legend()
-plt.show()
-plt.plot(score, label='score')
-plt.legend()
-plt.show()
-print("Loading from", output_dir)
-nlp2 = spacy.load(output_dir)
+# loss, score = train_spacy()
 
+# plt.plot(loss, label='loss')
+# plt.legend()
+# plt.show()
+# plt.plot(score, label='score')
+# plt.legend()
+# plt.show()
 
-docx1 = nlp2(u"Govardhana K\nSenior Software Engineer\n\nBengaluru, Karnataka, Karnataka - Email me on Indeed: indeed.com/r/Govardhana-K/\nb2de315d95905b68\n\nTotal IT experience 5 Years 6 Months")
-for token in docx1.ents:
-    print(token.text, token.start_char, token.end_char, token.label_)
+# print("Loading from", output_dir)
+# nlp2 = spacy.load(output_dir)
+# nlp = spacy.load('en_core_web_sm')
+
+# docx1 = nlp2(u"Govardhana K\nSenior Software Engineer\n\nBengaluru, Karnataka, Karnataka - Email me on Indeed: indeed.com/r/Govardhana-K/\nb2de315d95905b68\n\nTotal IT experience 5 Years 6 Months")
+# for token in docx1.ents:
+#     print(token.text, token.start_char, token.end_char, token.label_)
 
 
 # TRAIN_DATA = convert_dataturks_to_spacy(
@@ -221,3 +231,130 @@ for token in docx1.ents:
 
 # TRAIN_DATA = clean_entities(TRAIN_DATA)
 # print(TRAIN_DATA[0])
+
+# pdf
+# filename = "dataset/ZongdaoWen2023.pdf"
+# doc = fitz.open(filename)
+# text = ''
+# for page in doc:
+#     text = text + str(page.get_text())
+# # text = text.strip()
+# # text = ' '.join(text.split('\n'))
+
+# docx1 = nlp2(text)
+# for token in docx1.ents:
+#     print(token.text, token.start_char, token.end_char, token.label_)
+
+
+# EDA
+def plot_top_keywords(text):
+    # Tokenize the text into individual words
+    words = nltk.word_tokenize(text.lower())
+
+    # Remove stopwords and punctuation
+    stop_words = set(stopwords.words('english'))
+    filtered_words = [word for word in words if word.isalpha()
+                      and word not in stop_words]
+
+    # Calculate word frequency
+    freq_dist = nltk.FreqDist(filtered_words)
+
+    # Get the top 10 most common keywords
+    top_keywords = freq_dist.most_common(10)
+
+    # Extract the keywords and their frequencies
+    keywords = [keyword[0] for keyword in top_keywords]
+    frequencies = [keyword[1] for keyword in top_keywords]
+
+    # Plot the keyword frequencies
+    plt.bar(range(len(keywords)), frequencies)
+    plt.xticks(range(len(keywords)), keywords)
+    plt.xlabel('Keywords')
+    plt.ylabel('Frequency')
+    plt.title('Top 10 Most Used Keywords')
+    plt.show()
+
+
+def analyze_sentence_lengths(text):
+    text = text.split("@sp")
+    # Tokenize the text into sentences
+    # sentences = nltk.sent_tokenize(text)
+    # Get the length of each sentence
+    sentence_lengths = [len(res)
+                        for res in text]
+    avg = np.mean(sentence_lengths)
+
+    # Plot a histogram of sentence lengths
+    plt.hist(sentence_lengths)
+    plt.xlabel('Resume Length(Char)')
+    plt.ylabel('Count')
+    plt.title('Resume Length Distribution')
+    plt.show()
+
+
+def perform_sentiment_analysis(text):
+    # Initialize the sentiment analyzer
+    sid = SentimentIntensityAnalyzer()
+
+    # Analyze sentiment for each sentence
+    sentiment_scores = []
+    sentences = nltk.sent_tokenize(text)
+    for sentence in sentences:
+        sentiment_scores.append(sid.polarity_scores(sentence)['compound'])
+
+    # Plot the sentiment scores
+    plt.plot(sentiment_scores)
+    plt.xlabel('Sentence Index')
+    plt.ylabel('Sentiment Score')
+    plt.title('Sentiment Analysis')
+    plt.show()
+
+
+def analyze_pos_tags(text):
+    # Tokenize the text into individual words
+    words = nltk.word_tokenize(text)
+
+    # Perform POS tagging
+    pos_tags = nltk.pos_tag(words)
+
+    # Count the frequency of each POS tag
+    tag_freq = nltk.FreqDist(tag for word, tag in pos_tags)
+
+    # Extract the tags and their frequencies
+    tags = tag_freq.keys()
+    frequencies = tag_freq.values()
+
+    # Plot the tag frequencies
+    plt.bar(tags, frequencies)
+    plt.xlabel('POS Tags')
+    plt.ylabel('Frequency')
+    plt.title('POS Tagging Distribution')
+    plt.xticks(rotation=45)
+    plt.show()
+
+
+# nltk.download('punkt')
+# nltk.download('vader_lexicon')
+# nltk.download('averaged_perceptron_tagger')
+
+text_all = ''
+labels = []
+with open('dataset/Resumeold.json', 'r') as f:
+    lines = f.readlines()
+
+for line in lines:
+    data = json.loads(line)
+    text = data['content']
+    annotation = data['annotation']
+    for x in annotation:
+        labels.extend(x['label'])
+    text_all += text + '@sp'
+text_all = text_all.replace('\n', '')
+labels = list(set(labels))
+
+# plot_top_keywords(text_all)
+analyze_sentence_lengths(text_all)
+# perform_sentiment_analysis(text_all)
+# analyze_pos_tags(text_all)
+
+print(labels)
