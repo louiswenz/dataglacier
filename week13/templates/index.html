@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resume Extractor</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Resume Extractor</h1>
+        <form method="POST" action="/" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <input type="submit" value="Submit">
+        </form>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if entities %}
+            <div class="results">
+                <h2>Extracted Information:</h2>
+                <ul>
+                    {% for entity in entities %}
+                        <li>{{ entity[0] }} - {{ entity[1] }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
